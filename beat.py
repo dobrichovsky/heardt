@@ -11,9 +11,9 @@ from scipy import signal
 class Beat():
 	
 	s = strip.Strip()
-	first = range(0, 700)
-	second = range(800, 1200)
-	third = range(700, 800)
+	first = range(0, 600)
+	second = range(700, 1050)
+	third = range(600, 700)
 	gFirst = signal.gaussian(len(first), std=40)	
 	gSecond = signal.gaussian(len(second), std=40)
 	gThird = signal.gaussian(len(third), std=40)
