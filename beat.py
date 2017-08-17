@@ -11,16 +11,16 @@ from scipy import signal
 class Beat():
 	
 	s = strip.Strip()
-	first = range(0, 600)
-	second = range(700, 1050)
-	third = range(600, 700)
-	gFirst = signal.gaussian(len(first), std=40)	
-	gSecond = signal.gaussian(len(second), std=40)
-	gThird = signal.gaussian(len(third), std=40)
+	first = range(0, 200)
+	second = range(200, 350)
+	third = range(350, 350)
+	gFirst = signal.gaussian(len(first), std=10)	
+	gSecond = signal.gaussian(len(second), std=10)
+	gThird = signal.gaussian(len(third), std=10)
 	frame = 0
 	fps = 24
-	maxBrightness = 128
-	minBrightness = 0.05
+	maxBrightness = 255
+	minBrightness = 0.02
 	sector1 = [0.0, 0.0, 1.0, 0.66, 0.33, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 	sector2 = [0.0, 0.0, 0.0, 0.0, 1.0, 0.66, 0.33, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 	sector3 = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
