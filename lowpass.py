@@ -9,7 +9,7 @@ import wave
 from neopixel import *
 
 # LED strip configuration:
-LED_COUNT      = 100      # Number of LED pixels.
+LED_COUNT      = 350      # Number of LED pixels.
 LED_PIN        = 18      # GPIO pin connected to the pixels (18 uses PWM!).
 #LED_PIN        = 21    # GPIO pin connected to the pixels (10 uses SPI /dev/spidev0.0).
 LED_FREQ_HZ    = 800000 # LED signal frequency in hertz (usually 800khz)
@@ -19,15 +19,25 @@ LED_INVERT     = False   # True to invert the signal (when using NPN transistor 
 LED_CHANNEL    = 0       # set to '1' for GPIOs 13, 19, 41, 45 or 53
 LED_STRIP      = ws.WS2811_STRIP_RBG   # Strip type and colour ordering
 
+recorded = np.empty((8192),dtype="int16")
 
 def callback(in_data,frame_count, time_info, status):
     global recorded
     recorded = np.fromstring(in_data,dtype=np.int16).astype(np.float)
     return (recorded, pa.paContinue)
+    
+def playingCallback(in_data, frame_count, time_info, status):
+	global recorded
+	recorded = wf.readframes(frame_count)
+	return (recorded, pa.paContinue)
 
 # open the file for reading.
 #wf = wave.open('h:\\home\\burning man\\nahravky\\chords_and_tones_01.wav', 'rb')
-wf = wave.open('~/chords_and_tones_01.wav', 'rb')
+#wf = wave.open('/home/pi/chords_and_tones_01.wav', 'rb')
+#wf = wave.open('/home/pi/bezi_liska_01.wav', 'rb')
+wf = wave.open('/home/pi/kocka_leze_dirou_02.wav', 'rb')
+
+
 
 
 #audio_stream = pa.PyAudio().open(format=pa.paInt16, \
@@ -43,18 +53,28 @@ wf = wave.open('~/chords_and_tones_01.wav', 'rb')
 audio_stream = pa.PyAudio().open(format=pa.get_format_from_width(wf.getsampwidth()),
                 channels=wf.getnchannels(),
                 rate=wf.getframerate(),
-                input=True,
-                frames_per_buffer=8192,
-				stream_callback=callback)
+                input=True)
+                #frames_per_buffer=8192,
+				#stream_callback=callback)
 out_stream = pa.PyAudio().open(format =
                 pa.get_format_from_width(wf.getsampwidth()),
                 channels = wf.getnchannels(),
                 rate = wf.getframerate(),
                 output = True)
+          
+CHUNK = 8192      
+stream = pa.PyAudio().open(format=pa.get_format_from_width(wf.getsampwidth()),
+                 channels=wf.getnchannels(),
+                 rate=wf.getframerate(),
+                 output=True,
+                 frames_per_buffer=CHUNK,
+                 output_device_index=1,
+                 stream_callback=playingCallback)
 
-recorded = np.empty((8192),dtype="int16")
-audio_stream.start_stream()
-out_stream.start_stream()
+
+#audio_stream.start_stream()
+#out_stream.start_stream()
+stream.start_stream()
 
 # Convert the audio data to numbers, num_samples at a time.
 def read_audio(audio_stream, num_samples):
@@ -76,9 +96,10 @@ if __name__ == '__main__':
 	# Intialize the library (must be called once before other functions).
 	strip.begin()
 	
-	audio = read_audio(audio_stream, num_samples=512)
-	
-	chunk = 1
+	#audio = read_audio(audio_stream, num_samples=512)
+	#global recorded
+	chunk = 8192
+	#seglength = 256
 
 	data = wf.readframes(chunk)
 
@@ -96,7 +117,12 @@ if __name__ == '__main__':
 	amplitude = 0
 	printcounter = 0
 
-	while data != '':
+	#while data != '':
+	while stream.is_active():
+#		out_stream.write(data)
+#		stream.write(recorded)
+#		data = wf.readframes(chunk)
+		#for seg in range(0,chunk/seglength):
 		counter = counter + 1
 		if time.clock() - start >= 10:
 			#print counter/10
@@ -104,9 +130,9 @@ if __name__ == '__main__':
 			counter = 0
 			start = time.clock()
 		# writing to the stream is what *actually* plays the sound.
-		out_stream.write(data)
-		data = wf.readframes(chunk)
-		amplitude = max(abs(np.fromstring(data,dtype=np.int16).astype(np.float)))/128.0
+
+		amplitude = max(abs(np.fromstring(recorded,dtype=np.int16).astype(np.float)))/128.0
+#		amplitude = np.mean(abs(np.fromstring(data[seg*seglength:(seg+1)*seglength],dtype=np.int16).astype(np.float)))/128.0
 		lmax = amplitude
 		#print lmax
 		#print lastvalm
@@ -121,13 +147,16 @@ if __name__ == '__main__':
 			#print str(lmax)
 			lastval = lmax
 			lastvalm = lmax
-			step =  max(minimum,lastval - minimum) / (1.0 * cycles * timeout)
+			step =  max(minimum,lastval - minimum) / (0.02 * cycles * timeout)
 		for i in range(strip.numPixels()):
 			strip.setPixelColor(i,Color(int(lastval),0,0))
 		#print lastval
 		strip.show()
-	
+
 	#for l,r in audio:
 	#	amplitude = max(abs(l))/128.0
 		#print amplitude
-		
+	stream.stop_stream()
+	stream.close()
+	wf.close
+	pa.terminate()
