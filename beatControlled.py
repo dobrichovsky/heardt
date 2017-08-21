@@ -5,6 +5,9 @@ from neopixel import *
 from scipy import signal
 import numpy as np
 
+LOWTHRESHOLD = 64
+THRESHOLTMULTIPLIER = 1.0 * LOWTHRESHOLD / (256 - LOWTHRESHOLD)
+
 class Beat():
 	
 	s = strip.Strip()
@@ -50,7 +53,7 @@ class Beat():
 			
 			
 def sound2LED(value):
-	return min(64,max(0,(value / 128 - 64)*0.33))
+	return min(LOWTHRESHOLD,max(0,(value / 128 - LOWTHRESHOLD) * THRESHOLTMULTIPLIER))
 	
 # Main program logic follows:
 if __name__ == '__main__':
@@ -64,12 +67,15 @@ if __name__ == '__main__':
 	last = 10
 
 	BUFFERSIZE = 43
+	BEATBUFFERSIZE = 1024
+
 	FASTACTIONSIZE = 1
 	circularbuffer = np.zeros((BUFFERSIZE),dtype="float32")
 	maxbuffer = np.zeros((BUFFERSIZE),dtype="float32")
 	bufferpos = 0
+	beatbufferpos = 0
 	longtermbuffer = np.zeros((BUFFERSIZE),dtype="float32")
-	tlist = np.zeros((FASTACTIONSIZE),dtype="float32")
+	beatbuffer = np.zeros((BEATBUFFERSIZE),dtype="float32")
 	
 	while recorder.stream.is_active():
 		
@@ -81,33 +87,25 @@ if __name__ == '__main__':
 			left = readdata[::2]
 			right = readdata[1::2]
 			circularbuffer[bufferpos] = np.mean(abs(left))
-			#print str(time.clock()) + " " + str(circularbuffer[bufferpos])
-			#if circularbuffer[bufferpos] > last:
-			#	last = circularbuffer[bufferpos]
+			beatbufferpos[beatbufferpos] = circularbuffer[bufferpos]
+
 			maxbuffer[bufferpos] = np.max(abs(left))
-#			if int(circularbuffer[bufferpos] / 128) > last:
-#				last = int(circularbuffer[bufferpos] / 128)
 			longtermbuffer[bufferpos] = np.mean(circularbuffer)
-			#if bufferpos-FASTACTIONSIZE < 0 and bufferpos > 0:
-				#print longtermbuffer[bufferpos-FASTACTIONSIZE:]
-				#print longtermbuffer[0:bufferpos]
-			#	tlist = np.concatenate([longtermbuffer[bufferpos-FASTACTIONSIZE:], longtermbuffer[:bufferpos]])
-			#else:
-			#	tlist = longtermbuffer[bufferpos-FASTACTIONSIZE:bufferpos]
-			#print np.mean(tlist) / 128 - 128
-			#print min(64,max(0,(np.mean(tlist) / 128 - 128)*0.5)) 
-			
-			#if min(64,max(0,(np.mean(tlist) / 128 - 128)*0.5)) > last:
-			#	last = min(64,max(0,(np.mean(tlist) / 128 - 128)*0.5))
+
 			if sound2LED(circularbuffer[bufferpos]) > last:
 				last = sound2LED(circularbuffer[bufferpos])
 			if 0.5 * sound2LED(np.mean(longtermbuffer)) > last:
 				last = sound2LED(np.mean(longtermbuffer)) * 0.5
 				print "longtime" + str(last) + " " + str(time.clock())
+			
 			bufferpos = bufferpos + 1
 			if bufferpos >= BUFFERSIZE:
 				bufferpos = 0
 			
+			beatbufferpos = beatbufferpos + 1
+			if beatbufferpos >= BEATBUFFERSIZE:
+				beatbufferpos = 0
+
 			now = time.clock()
 			fps = fps + 1
 			if now-start >= 1.0:
@@ -116,7 +114,7 @@ if __name__ == '__main__':
 				#print fps
 				#print str(peaksPerSecond) + "/" + str(fps)
 				fps = 0
-				#print last
+				print np.avg(beatbuffer)
 #				print str(np.mean(circularbuffer)) + "/" + str(np.mean(maxbuffer))
 			
 				start = now
