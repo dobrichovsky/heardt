@@ -3,6 +3,7 @@ import strip
 from recorder import Recorder
 from neopixel import *
 from scipy import signal
+import numpy as np
 
 class Beat():
 	
@@ -46,46 +47,80 @@ class Beat():
 		self.frame = self.frame + 1		
 		if self.frame >= self.fps:
 			self.frame = 0
+			
+			
+def sound2LED(value):
+	return min(64,max(0,(value / 128 - 64)*0.33))
 	
 # Main program logic follows:
 if __name__ == '__main__':
 	beat = Beat()
 	recorder = Recorder()
+	recorder.start()
 	
 	start = time.clock()
-	counter = 0
+	count = 0
+	fps = 0
+	last = 10
 
+	BUFFERSIZE = 43
+	FASTACTIONSIZE = 1
+	circularbuffer = np.zeros((BUFFERSIZE),dtype="float32")
+	maxbuffer = np.zeros((BUFFERSIZE),dtype="float32")
+	bufferpos = 0
+	longtermbuffer = np.zeros((BUFFERSIZE),dtype="float32")
+	tlist = np.zeros((FASTACTIONSIZE),dtype="float32")
+	
 	while recorder.stream.is_active():
-		readdata = np.fromstring(recorder.data,dtype=np.int16).astype(np.float32)
-		#time.sleep(0.1)
-		left = readdata[::2]
-		right = readdata[1::2]
-		avgdata = np.mean(left,right)
-		#print len(left)
-		#print len(right)
-		#print len(readdata)
-		last = max(10,last-10)
-		#if np.mean(abs(readdata)) > 300:
-		if o(left):
-			print o.get_last_s()
-			print str(count) + " " + str(o.get_last())
-			#count = count + 1
-			last = 128
-		for i in range(strip.numPixels()):
-			strip.setPixelColor(i,Color(last,0,0))
-		strip.show()
-
-
-
-	print ('Press Ctrl-C to quit.')
-	while True:
-		counter = counter + 1
-		if time.clock() - start >= 10:
-			#beat.fps = counter/10
-			print beat.fps
-			cycles = counter/10
-			counter = 0
-			start = time.clock()
-#		beat.off()
-		beat.beatAnim()
-		#beat.colorWipe(Color(128,0,0))
+		
+		last = max(1,last-5)
+		if True: #recorder.newData == True:
+			#recorder.newData = False
+			readdata = np.fromstring(recorder.data,dtype=np.int16).astype(np.float32)
+			#time.sleep(0.001)
+			left = readdata[::2]
+			right = readdata[1::2]
+			circularbuffer[bufferpos] = np.mean(abs(left))
+			#print str(time.clock()) + " " + str(circularbuffer[bufferpos])
+			#if circularbuffer[bufferpos] > last:
+			#	last = circularbuffer[bufferpos]
+			maxbuffer[bufferpos] = np.max(abs(left))
+#			if int(circularbuffer[bufferpos] / 128) > last:
+#				last = int(circularbuffer[bufferpos] / 128)
+			longtermbuffer[bufferpos] = np.mean(circularbuffer)
+			#if bufferpos-FASTACTIONSIZE < 0 and bufferpos > 0:
+				#print longtermbuffer[bufferpos-FASTACTIONSIZE:]
+				#print longtermbuffer[0:bufferpos]
+			#	tlist = np.concatenate([longtermbuffer[bufferpos-FASTACTIONSIZE:], longtermbuffer[:bufferpos]])
+			#else:
+			#	tlist = longtermbuffer[bufferpos-FASTACTIONSIZE:bufferpos]
+			#print np.mean(tlist) / 128 - 128
+			#print min(64,max(0,(np.mean(tlist) / 128 - 128)*0.5)) 
+			
+			#if min(64,max(0,(np.mean(tlist) / 128 - 128)*0.5)) > last:
+			#	last = min(64,max(0,(np.mean(tlist) / 128 - 128)*0.5))
+			if sound2LED(circularbuffer[bufferpos]) > last:
+				last = sound2LED(circularbuffer[bufferpos])
+			if 0.5 * sound2LED(np.mean(longtermbuffer)) > last:
+				last = sound2LED(np.mean(longtermbuffer)) * 0.5
+				print "longtime" + str(last) + " " + str(time.clock())
+			bufferpos = bufferpos + 1
+			if bufferpos >= BUFFERSIZE:
+				bufferpos = 0
+			
+			now = time.clock()
+			fps = fps + 1
+			if now-start >= 1.0:
+				peaksPerSecond = count
+				count = 0
+				#print fps
+				#print str(peaksPerSecond) + "/" + str(fps)
+				fps = 0
+				#print last
+#				print str(np.mean(circularbuffer)) + "/" + str(np.mean(maxbuffer))
+			
+				start = now
+		#print last
+		for i in range(beat.s.strip.numPixels()):
+			beat.s.strip.setPixelColor(i,Color(min(255,int(last)),0,0))
+		beat.s.strip.show()
