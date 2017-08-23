@@ -18,7 +18,7 @@ class Beat():
 	gSecond = signal.gaussian(len(second), std=10)
 	gThird = signal.gaussian(len(third), std=10)
 	frame = 0
-	fps = 24
+	fps = 36
 	maxBrightness = 255
 	minBrightness = 0.07
 	sector1 = [0.0, 0.0, 1.0, 0.66, 0.33, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -33,7 +33,13 @@ class Beat():
 		[211,225],[225,239],[239,243],[243,256],[256,259],[259,265],[265,268],[268,275],[275,290],
 		[290,300],[300,344],[344,344],[344,344],[344,344],[344,344],[344,353],[353,363],[363,378],[378,394],[394,394],
 		[394,404],[404,417],[417,428],[428,442],[442,451],[451,469],[469,492],[492,505],[505,514],
-		[514,532],[532,542],[542,568],[568,573],[573,584],[584,600],[600,613],[613,616],[616,620]
+		[514,532],[532,542],[542,568],[568,573],[573,584],[584,600],[600,613],[613,616],[616,620],
+		[620,628],[628,644],[644,644],[644,657],[657,663],[663,672],[672,680],[680,696],[696,708],[708,719],
+		[719,735],[735,748],[748,764],[764,769],[769,781],[781,792],[792,804],[804,811],[811,823],
+		[823,837],[837,856],[856,864],[864,882],[882,898],[898,914],[914,924],[924,934],[934,951],
+		[951,964],[964,973],[973,1010],[1010,1010],[1010,1010],[1010,1010],[1010,1030],[1030,1033],
+		[1033,1058],[1058,1058],[1058,1058],[1058,1058],[1058,1065],[1065,1076],[1076,1086],[1086,1101],
+		[1101,1150]
 		]
 	
 	coords = [[0.4,0],[0.48,0.22],[0.52,0.66],[0.5,0.9],[0.28,0.96],[0.28,0.9],[0.48,0.84],[0.52,0.66],
@@ -80,12 +86,12 @@ class Beat():
 		#return [0,0]
 	
 	def __init__(self):
-		#self.lightup = self.getLastRange()
-		self.lightup = []
+		self.lightup = self.getLastRange()
+		#self.lightup = []
 	
 	def getLastRange(self):
-		#return range(self.segments[-1][0],self.segments[-1][1])
-		return range(self.segments[len(self.coords)-1][0],self.segments[len(self.coords)-1][1])
+		return range(self.segments[-1][0],self.segments[-1][1])
+		#return range(self.segments[len(self.coords)-1][0],self.segments[len(self.coords)-1][1])
 	
 	def getRange(self, segment):
 		return range(self.segments[segment][0],self.segments[segment][1])
@@ -189,12 +195,12 @@ if __name__ == '__main__':
 			cycles = counter
 			counter = 0
 			start = time.clock()
-			break
+			#break
 		
 		#beat.cycleSegments()
 		#beat.lightSegment()
-		beat.triColor()
-		#beat.allBeatAnim()
+		#beat.triColor()
+		beat.allBeatAnim()
 		#beat.off()
 		#beat.beatAnim()
 		#beat.lowRed()
